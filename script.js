@@ -86,7 +86,7 @@ async function fetchGoogleScholar() {
     const scholarId = 'a89cK-wAAAAJ';
     // Use codetabs proxy which is more reliable for raw HTML fetching
     // Added 'sortby=pubdate' to sort from recent to oldest, and 'pagesize=100' to fetch all papers at once.
-    const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(`https://scholar.google.com/citations?user=${scholarId}&hl=en&view_op=list_works&sortby=pubdate&cstart=0&pagesize=100`)}`;
+    const proxyUrl = 'scholar.html';
 
     // Hardcoded dictionary for additional links. 
     // Key is the simplified version of the title (lowercase, trimmed).
@@ -111,11 +111,8 @@ async function fetchGoogleScholar() {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        // Google Scholar returns ISO-8859-1 payload but proxy strips headers, 
-        // causing .text() to attempt UTF-8 and fail on accents (\ufffd).
-        const buffer = await response.arrayBuffer();
-        const decoder = new TextDecoder('windows-1252');
-        const html = decoder.decode(buffer);
+        
+        const html = await response.text();
 
         // Parse HTML
         const parser = new DOMParser();
