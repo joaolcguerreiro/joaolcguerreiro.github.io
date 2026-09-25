@@ -8,6 +8,9 @@ if (ENABLE_GRAPH) {
     let particles = [];
     let mouse = { x: null, y: null, radius: 150 };
     let lastScrollY = window.scrollY;
+    
+    // Check if the device is a touch screen
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     class Particle {
         constructor(canvasWidth, canvasHeight) {
@@ -15,7 +18,7 @@ if (ENABLE_GRAPH) {
             this.y = Math.random() * canvasHeight;
             this.vx = (Math.random() - 0.5) * 0.5;
             this.vy = (Math.random() - 0.5) * 0.5;
-            this.radius = Math.random() * 1.5 + 0.5;
+            this.radius = Math.random() * 1.5 + 0.5; 
         }
 
         update(canvasWidth, canvasHeight, scrollDelta) {
@@ -52,8 +55,8 @@ if (ENABLE_GRAPH) {
         ctx.scale(dpr, dpr);
         
         particles = [];
-        // Slightly increased the number of dots by decreasing the divisor from 15000 to 11000
-        const numParticles = (logicalWidth * logicalHeight) / 11000;
+        // Increased density so they form huge webs naturally, rather than tiny 2-dot pairs
+        const numParticles = (logicalWidth * logicalHeight) / 9000;
         
         for (let i = 0; i < numParticles; i++) {
             particles.push(new Particle(logicalWidth, logicalHeight));
@@ -77,9 +80,11 @@ if (ENABLE_GRAPH) {
                 const dy = particles[i].y - particles[j].y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
-                if (distance < 120) {
+                // Connect them if they are close enough (increased to form large clusters)
+                if (distance < 160) {
                     ctx.beginPath();
-                    ctx.strokeStyle = `rgba(96, 165, 250, ${0.16 - distance / 750})`; 
+                    // Maps distance to opacity perfectly: 0.16 at 0 dist, 0.0 at 160 dist.
+                    ctx.strokeStyle = `rgba(96, 165, 250, ${0.16 * (1 - distance / 160)})`; 
                     ctx.lineWidth = 1;
                     ctx.moveTo(particles[i].x, particles[i].y);
                     ctx.lineTo(particles[j].x, particles[j].y);
@@ -95,7 +100,7 @@ if (ENABLE_GRAPH) {
                 
                 if (distance < mouse.radius) {
                     ctx.beginPath();
-                    ctx.strokeStyle = `rgba(37, 99, 235, ${0.24 - distance / 625})`; 
+                    ctx.strokeStyle = `rgba(37, 99, 235, ${0.24 * (1 - distance / mouse.radius)})`; 
                     ctx.lineWidth = 1;
                     ctx.moveTo(particles[i].x, particles[i].y);
                     ctx.lineTo(mouse.x, mouse.y);
@@ -115,15 +120,18 @@ if (ENABLE_GRAPH) {
 
     window.addEventListener('resize', init);
 
-    window.addEventListener('mousemove', (e) => {
-        mouse.x = e.x;
-        mouse.y = e.y;
-    });
+    // Only bind mouse events if it's NOT a touch device
+    if (!isTouchDevice) {
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+        });
 
-    window.addEventListener('mouseout', () => {
-        mouse.x = null;
-        mouse.y = null;
-    });
+        window.addEventListener('mouseout', () => {
+            mouse.x = null;
+            mouse.y = null;
+        });
+    }
 
     init();
     animate();
