@@ -53,7 +53,7 @@ if (ENABLE_GRAPH) {
 
     let logicalWidth, logicalHeight;
 
-    function init() {
+    function init(resetParticles = true) {
         logicalWidth = window.innerWidth;
         logicalHeight = window.innerHeight;
         
@@ -63,12 +63,20 @@ if (ENABLE_GRAPH) {
         canvas.height = logicalHeight * dpr;
         ctx.scale(dpr, dpr);
         
-        particles = [];
-        // Increased density so they form huge webs naturally, rather than tiny 2-dot pairs
-        const numParticles = (logicalWidth * logicalHeight) / 7000;
+        if (resetParticles) {
+            particles = [];
+        }
         
-        for (let i = 0; i < numParticles; i++) {
-            particles.push(new Particle(logicalWidth, logicalHeight));
+        // Increased density so they form huge webs naturally, rather than tiny 2-dot pairs
+        const numParticles = Math.floor((logicalWidth * logicalHeight) / 7000);
+        
+        // Dynamically adjust particles without clearing existing ones
+        if (particles.length < numParticles) {
+            for (let i = particles.length; i < numParticles; i++) {
+                particles.push(new Particle(logicalWidth, logicalHeight));
+            }
+        } else if (particles.length > numParticles) {
+            particles.splice(numParticles);
         }
     }
 
@@ -139,22 +147,42 @@ if (ENABLE_GRAPH) {
         }
     }
 
-    window.addEventListener('resize', init);
+    window.addEventListener('resize', () => {
+        init(false);
+    });
 
-    // Only bind mouse events if it's NOT a touch device
-    if (!isTouchDevice) {
-        window.addEventListener('mousemove', (e) => {
-            mouse.x = e.x;
-            mouse.y = e.y;
-        });
+    // Mouse events
+    window.addEventListener('mousemove', (e) => {
+        mouse.x = e.x;
+        mouse.y = e.y;
+    });
 
-        window.addEventListener('mouseout', () => {
-            mouse.x = null;
-            mouse.y = null;
-        });
-    }
+    window.addEventListener('mouseout', () => {
+        mouse.x = null;
+        mouse.y = null;
+    });
 
-    init();
+    // Touch events for interaction
+    window.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 0) {
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+        }
+    });
+
+    window.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 0) {
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+        }
+    });
+
+    window.addEventListener('touchend', () => {
+        mouse.x = null;
+        mouse.y = null;
+    });
+
+    init(true);
     animate();
 } else {
     // If graph is disabled, hide the canvas
