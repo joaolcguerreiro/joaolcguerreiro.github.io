@@ -5,7 +5,9 @@ import json
 
 def fetch_scholar_data(scholar_id):
     url = f"https://scholar.google.com/citations?user={scholar_id}&hl=en&view_op=list_works&sortby=pubdate&cstart=0&pagesize=100"
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    import urllib.parse
+    proxy_url = f"https://corsproxy.io/?{urllib.parse.quote(url)}"
+    req = urllib.request.Request(proxy_url, headers={"User-Agent": "Mozilla/5.0"})
     
     try:
         html = urllib.request.urlopen(req).read().decode('utf-8')
