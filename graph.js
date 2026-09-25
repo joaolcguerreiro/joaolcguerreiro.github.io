@@ -23,8 +23,8 @@ if (ENABLE_GRAPH) {
             this.vx = (Math.random() - 0.5) * 0.5;
             this.vy = (Math.random() - 0.5) * 0.5;
             
-            // Particles closer to the camera are slightly larger
-            this.baseRadius = (Math.random() * 1.5 + 0.5) * (this.z * 0.6 + 0.4); 
+            // Particles closer to the camera are slightly larger (increased variance)
+            this.baseRadius = (Math.random() * 2.5 + 0.5) * (this.z * 0.6 + 0.4); 
             this.radius = this.baseRadius;
         }
 
