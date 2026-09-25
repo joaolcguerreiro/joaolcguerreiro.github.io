@@ -16,9 +16,16 @@ if (ENABLE_GRAPH) {
         constructor(canvasWidth, canvasHeight) {
             this.x = Math.random() * canvasWidth;
             this.y = Math.random() * canvasHeight;
+            
+            // Depth of field: z goes from 0 (background) to 1 (foreground)
+            this.z = Math.random(); 
+            
             this.vx = (Math.random() - 0.5) * 0.5;
             this.vy = (Math.random() - 0.5) * 0.5;
-            this.radius = Math.random() * 1.5 + 0.5; 
+            
+            // Particles closer to the camera are slightly larger
+            this.baseRadius = (Math.random() * 1.5 + 0.5) * (this.z * 0.6 + 0.4); 
+            this.radius = this.baseRadius;
         }
 
         update(canvasWidth, canvasHeight, scrollDelta) {
@@ -37,7 +44,9 @@ if (ENABLE_GRAPH) {
         draw(ctx) {
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(96, 165, 250, 0.3)'; 
+            // Particles in the background are dimmer, foreground are brighter
+            const alpha = 0.05 + (this.z * 0.25); 
+            ctx.fillStyle = `rgba(96, 165, 250, ${alpha})`; 
             ctx.fill();
         }
     }
@@ -56,7 +65,7 @@ if (ENABLE_GRAPH) {
         
         particles = [];
         // Increased density so they form huge webs naturally, rather than tiny 2-dot pairs
-        const numParticles = (logicalWidth * logicalHeight) / 9000;
+        const numParticles = (logicalWidth * logicalHeight) / 7000;
         
         for (let i = 0; i < numParticles; i++) {
             particles.push(new Particle(logicalWidth, logicalHeight));
@@ -73,9 +82,8 @@ if (ENABLE_GRAPH) {
 
         for (let i = 0; i < particles.length; i++) {
             particles[i].update(logicalWidth, logicalHeight, scrollDelta);
-            particles[i].draw(ctx);
 
-            for (let j = i; j < particles.length; j++) {
+            for (let j = i + 1; j < particles.length; j++) {
                 const dx = particles[i].x - particles[j].x;
                 const dy = particles[i].y - particles[j].y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
@@ -83,8 +91,12 @@ if (ENABLE_GRAPH) {
                 // Connect them if they are close enough (increased to form large clusters)
                 if (distance < 160) {
                     ctx.beginPath();
-                    // Maps distance to opacity perfectly: 0.16 at 0 dist, 0.0 at 160 dist.
-                    ctx.strokeStyle = `rgba(96, 165, 250, ${0.16 * (1 - distance / 160)})`; 
+                    // The depth (z) of the particles determines how bright the connection line is
+                    const avgZ = (particles[i].z + particles[j].z) / 2;
+                    const maxOpacity = 0.16 * (avgZ * 0.8 + 0.2); 
+                    
+                    // Maps distance to opacity perfectly
+                    ctx.strokeStyle = `rgba(96, 165, 250, ${maxOpacity * (1 - distance / 160)})`; 
                     ctx.lineWidth = 1;
                     ctx.moveTo(particles[i].x, particles[i].y);
                     ctx.lineTo(particles[j].x, particles[j].y);
@@ -106,15 +118,24 @@ if (ENABLE_GRAPH) {
                     ctx.lineTo(mouse.x, mouse.y);
                     ctx.stroke();
                     
-                    // subtle push effect
+                    // push effect (increased force for faster moving away dots)
                     const forceDirectionX = dx / distance;
                     const forceDirectionY = dy / distance;
                     const force = (mouse.radius - distance) / mouse.radius;
                     
-                    particles[i].x += forceDirectionX * force * 0.5;
-                    particles[i].y += forceDirectionY * force * 0.5;
+                    particles[i].x += forceDirectionX * force * 1.5;
+                    particles[i].y += forceDirectionY * force * 1.5;
+                    
+                    // Slightly enlarge nodes near the mouse for a dynamic response
+                    particles[i].radius = particles[i].baseRadius + (force * 1.5);
+                } else {
+                    particles[i].radius = particles[i].baseRadius;
                 }
+            } else {
+                particles[i].radius = particles[i].baseRadius;
             }
+            
+            particles[i].draw(ctx);
         }
     }
 
