@@ -88,8 +88,7 @@ if (ENABLE_GRAPH) {
         ctx.clearRect(0, 0, logicalWidth, logicalHeight);
 
         const currentScrollY = window.scrollY;
-        // Disable parallax on mobile to prevent iOS Safari jumping
-        const scrollDelta = isMobile ? 0 : currentScrollY - lastScrollY;
+        const scrollDelta = currentScrollY - lastScrollY;
         lastScrollY = currentScrollY;
 
         for (let i = 0; i < particles.length; i++) {
@@ -152,6 +151,9 @@ if (ENABLE_GRAPH) {
     }
 
     window.addEventListener('resize', () => {
+        // On mobile, scrolling hides/shows the address bar triggering a height-only resize.
+        // We completely ignore this to prevent the canvas drawing buffer from rescaling and teleporting particles.
+        if (isMobile && window.innerWidth === logicalWidth) return;
         init(false);
     });
 
