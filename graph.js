@@ -8,9 +8,13 @@ if (ENABLE_GRAPH) {
     let particles = [];
     let mouse = { x: null, y: null, radius: 150 };
     let lastScrollY = window.scrollY;
+    let smoothedScrollDelta = 0;
     
-    // Check if the device is a touch screen
+    // Check if the device is a touch screen (for interaction)
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    // Check if it's specifically a mobile device (for scroll workarounds)
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
     class Particle {
         constructor(canvasWidth, canvasHeight) {
@@ -85,11 +89,22 @@ if (ENABLE_GRAPH) {
         ctx.clearRect(0, 0, logicalWidth, logicalHeight);
 
         const currentScrollY = window.scrollY;
-        const scrollDelta = currentScrollY - lastScrollY;
+        const targetScrollDelta = currentScrollY - lastScrollY;
         lastScrollY = currentScrollY;
 
+        let finalScrollDelta;
+        if (isMobile) {
+            // Smooth out the scroll delta to prevent sudden jumps/teleporting on mobile browsers
+            smoothedScrollDelta += (targetScrollDelta - smoothedScrollDelta) * 0.15;
+            if (Math.abs(smoothedScrollDelta) < 0.01) smoothedScrollDelta = 0;
+            finalScrollDelta = smoothedScrollDelta;
+        } else {
+            // Strict 1-to-1 rigid scrolling for PC
+            finalScrollDelta = targetScrollDelta;
+        }
+
         for (let i = 0; i < particles.length; i++) {
-            particles[i].update(logicalWidth, logicalHeight, scrollDelta);
+            particles[i].update(logicalWidth, logicalHeight, finalScrollDelta);
 
             for (let j = i + 1; j < particles.length; j++) {
                 const dx = particles[i].x - particles[j].x;
