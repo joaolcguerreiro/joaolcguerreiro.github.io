@@ -47,8 +47,9 @@ def fetch_scholar_html(scholar_id):
                 time.sleep(10)
             else:
                 print("All attempts failed. Google Scholar is likely blocking the GitHub Actions IP.")
-                # We exit with 1 so the workflow fails and we don't commit bad data
-                sys.exit(1)
+                # We exit with 0 instead of 1 so the workflow doesn't fail and send spam emails.
+                # It will simply try again tomorrow.
+                sys.exit(0)
 
 if __name__ == '__main__':
     fetch_scholar_html('a89cK-wAAAAJ')
